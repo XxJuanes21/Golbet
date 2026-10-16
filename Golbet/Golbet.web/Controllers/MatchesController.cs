@@ -1,6 +1,8 @@
 ﻿using GolBet.Entities.Enums;
+using GolBet.Repositories.Data;
 using GolBet.Services.DTOs;
 using GolBet.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -31,12 +33,14 @@ public class MatchesController : Controller
         return View(match);
     }
 
+    [Authorize(Roles = DbSeeder.AdminRole)]
     public async Task<IActionResult> Create()
     {
         await LoadTeamsAsync();
         return View(new MatchFormDto());
     }
 
+    [Authorize(Roles = DbSeeder.AdminRole)]
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(MatchFormDto dto)
     {
@@ -60,6 +64,7 @@ public class MatchesController : Controller
         }
     }
 
+    [Authorize(Roles = DbSeeder.AdminRole)]
     public async Task<IActionResult> Edit(int id)
     {
         var dto = await _matchService.GetForEditAsync(id);
@@ -69,6 +74,7 @@ public class MatchesController : Controller
         return View(dto);
     }
 
+    [Authorize(Roles = DbSeeder.AdminRole)]
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(MatchFormDto dto)
     {
@@ -92,6 +98,7 @@ public class MatchesController : Controller
         }
     }
 
+    [Authorize(Roles = DbSeeder.AdminRole)]
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Deactivate(int id)
     {

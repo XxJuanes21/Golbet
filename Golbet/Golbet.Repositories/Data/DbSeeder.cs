@@ -1,16 +1,29 @@
 ﻿using GolBet.Entities;
 using GolBet.Entities.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace GolBet.Repositories.Data;
 
 public static class DbSeeder
 {
-    public static async Task SeedAsync(AppDbContext context)
+    public const string AdminRole = "Admin";
+    public const string BettorRole = "Apostador";
+
+    public static async Task SeedAsync(
+        AppDbContext context,
+        RoleManager<IdentityRole> roleManager,
+        UserManager<AppUser> userManager)
     {
         // Applies any pending migration (creates the DB if it does not exist)
         await context.Database.MigrateAsync();
 
+        await SeedDomainAsync(context);
+        await SeedIdentityAsync(roleManager, userManager);
+    }
+
+    private static async Task SeedDomainAsync(AppDbContext context)
+    {
         if (await context.Teams.AnyAsync()) return;   // idempotence guard
 
         // ---- Teams ----
@@ -86,6 +99,32 @@ public static class DbSeeder
 
         context.Matches.AddRange(matches);
         await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedIdentityAsync(
+        RoleManager<IdentityRole> roleManager,
+        UserManager<AppUser> userManager)
+    {
+        foreach (var role in new[] { AdminRole, BettorRole })
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole(role));
+        }
+
+        if (await userManager.FindByEmailAsync("admin@golbet.com") is null)
+        {
+            var admin = new AppUser
+            {
+                UserName = "admin@golbet.com",
+                Email = "admin@golbet.com",
+                FullName = "Administrador GolBet",
+                Balance = 0m,
+                EmailConfirmed = true
+            };
+
+            await userManager.CreateAsync(admin, "Admin123*");
+            await userManager.AddToRoleAsync(admin, AdminRole);
+        }
     }
 }
 
